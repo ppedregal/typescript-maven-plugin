@@ -13,6 +13,13 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
+	
+	<distributionManagement>
+		<repository>
+			<id>github:ppedregal@gmail</id>
+			<url>https://raw.github.com/ppedregal/typescript-maven-plugin/master/repo</url>
+		</repository>
+	</distributionManagement>
 
 	<dependencies>
 		<dependency>
