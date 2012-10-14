@@ -1,0 +1,24 @@
+-----
+Introduction
+-----
+
+${project.name}
+
+This plugin uses Mozilla Rhino to execute the TypeScript compiler 
+inside maven and create the compiled javascript files.
+
+* Usage
+
+Include the plugin in your pom.xml to compile the TypeScript files
+
+<plugin>
+	<groupId>${project.groupId}</groupId>
+	<artifactId>${project.artifactId}</artifactId>        
+	<version>${project.version}</version>
+</plugin>
+
+The tsc goal will be executed in the generate-sources lifecycle phase and 
+will compile all .ts files found in the default input dir "src/main/ts"
+generated .js files will placed on "target/ts".
+Check goal documentation for more details on configuration.
+
