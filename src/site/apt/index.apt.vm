@@ -7,7 +7,7 @@ ${project.name}
 This plugin uses Mozilla Rhino to execute the TypeScript compiler 
 inside maven and create the compiled javascript files.
 
-* Usage
+* Usage 
 
 Include the plugin in your pom.xml to compile the TypeScript files
 
