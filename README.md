@@ -1,4 +1,4 @@
-<h1>typescript-maven-plugin</h1>
+<h1>TypeScript Maven Plugin</h1>
 Maven plugin that integrates <a href="http://typescript.codeplex.com/">TypeScript</a> compiler into maven builds
 
 To use the plugin in maven you need to follow these steps:
@@ -24,3 +24,5 @@ To use the plugin in maven you need to follow these steps:
         &lt;/configuration&gt;        
       &lt;/plugin&gt;
 </pre>
+
+More documentation in the generated maven site <a href="http://ppedregal.github.com/typescript-maven-plugin/">here</a>
