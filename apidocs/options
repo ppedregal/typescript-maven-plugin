@@ -15,10 +15,10 @@
 -docencoding
 'UTF-8'
 -doctitle
-'typescript-maven-plugin Maven Plugin 0.0.1-SNAPSHOT API'
+'TypeScript Maven Plugin 0.0.1-SNAPSHOT API'
 -linkoffline
 'http://download.oracle.com/javase/6/docs/api' '/media/windows7/Users/ppedregal.VECTORSF/workspace/typescript-linux/typescript-maven-plugin/target/javadoc-bundle-options'
 -use
 -version
 -windowtitle
-'typescript-maven-plugin Maven Plugin 0.0.1-SNAPSHOT API'
+'TypeScript Maven Plugin 0.0.1-SNAPSHOT API'

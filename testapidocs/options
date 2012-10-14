@@ -15,7 +15,7 @@
 -docencoding
 'UTF-8'
 -doctitle
-'typescript-maven-plugin Maven Plugin 0.0.1-SNAPSHOT Test API'
+'TypeScript Maven Plugin 0.0.1-SNAPSHOT Test API'
 -link
 '../apidocs'
 -linkoffline
@@ -23,4 +23,4 @@
 -use
 -version
 -windowtitle
-'typescript-maven-plugin Maven Plugin 0.0.1-SNAPSHOT Test API'
+'TypeScript Maven Plugin 0.0.1-SNAPSHOT Test API'
