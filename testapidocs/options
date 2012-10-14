@@ -1,0 +1,26 @@
+-classpath
+'/media/windows7/Users/ppedregal.VECTORSF/workspace/typescript-linux/typescript-maven-plugin/target/classes:/media/windows7/Users/ppedregal.VECTORSF/workspace/typescript-linux/typescript-maven-plugin/target/test-classes:/home/ppedregal/.m2/repository/commons-io/commons-io/2.4/commons-io-2.4.jar:/home/ppedregal/.m2/repository/org/apache/maven/maven-plugin-api/2.0/maven-plugin-api-2.0.jar:/home/ppedregal/.m2/repository/org/mozilla/rhino/1.7R4/rhino-1.7R4.jar:/home/ppedregal/.m2/repository/junit/junit/3.8.1/junit-3.8.1.jar'
+-encoding
+'UTF-8'
+-protected
+-sourcepath
+'/media/windows7/Users/ppedregal.VECTORSF/workspace/typescript-linux/typescript-maven-plugin/src/test/java'
+-author
+-bottom
+'Copyright &#169; 2012. All Rights Reserved.'
+-charset
+'UTF-8'
+-d
+'/media/windows7/Users/ppedregal.VECTORSF/workspace/typescript-linux/typescript-maven-plugin/target/site/testapidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'typescript-maven-plugin Maven Plugin 0.0.1-SNAPSHOT Test API'
+-link
+'../apidocs'
+-linkoffline
+'http://download.oracle.com/javase/6/docs/api' '/media/windows7/Users/ppedregal.VECTORSF/workspace/typescript-linux/typescript-maven-plugin/target/javadoc-bundle-options'
+-use
+-version
+-windowtitle
+'typescript-maven-plugin Maven Plugin 0.0.1-SNAPSHOT Test API'
