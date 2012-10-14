@@ -107,11 +107,11 @@
                 
         <div id="bodyColumn"  class="span9" >
                                   
-            <div class="section"><h2>Introduction<a name="Introduction"></a></h2></div><div class="section"><h2>This plugin uses Mozilla Rhino to execute the TypeScript compiler inside maven and create the compiled javascript files.<a name="This_plugin_uses_Mozilla_Rhino_to_execute_the_TypeScript_compiler_inside_maven_and_create_the_compiled_javascript_files."></a></h2><div class="section"><h3>Usage <a name="Usage"></a></h3></div></div><div class="section"><h2>Include the plugin in your pom.xml to compile the TypeScript files<a name="Include_the_plugin_in_your_pom.xml_to_compile_the_TypeScript_files"></a></h2><div class="source"><pre class="prettyprint">&lt;plugin&gt;
-        &lt;groupId&gt;com.ppedregal.typescript&lt;/groupId&gt;
-        &lt;artifactId&gt;typescript-maven-plugin&lt;/artifactId&gt;        
-        &lt;version&gt;0.0.1-SNAPSHOT&lt;/version&gt;
-&lt;/plugin&gt;</pre></div></div><div class="section"><h2>The tsc goal will be executed in the generate-sources lifecycle phase and will compile all .ts files found in the default input dir &quot;src/main/ts&quot; generated .js files will placed on &quot;target/ts&quot;. Check goal documentation for more details on configuration.<a name="The_tsc_goal_will_be_executed_in_the_generate-sources_lifecycle_phase_and_will_compile_all_.ts_files_found_in_the_default_input_dir_srcmaints_generated_.js_files_will_placed_on_targetts._Check_goal_documentation_for_more_details_on_configuration."></a></h2></div>
+            <div><pre>Introduction</pre></div><p>This plugin uses Mozilla Rhino to execute the TypeScript compiler inside maven and create the compiled javascript files.</p><ul><li>Usage <p>Include the plugin in your pom.xml to compile the TypeScript files</p><div class="source"><pre class="prettyprint">        &lt;plugin&gt;
+                &lt;groupId&gt;com.ppedregal.typescript&lt;/groupId&gt;
+                &lt;artifactId&gt;typescript-maven-plugin&lt;/artifactId&gt;        
+                &lt;version&gt;0.0.1-SNAPSHOT&lt;/version&gt;
+        &lt;/plugin&gt;</pre></div><p>The tsc goal will be executed in the generate-sources lifecycle phase and will compile all .ts files found in the default input dir &quot;src/main/ts&quot; generated .js files will placed on &quot;target/ts&quot;. Check goal documentation for more details on configuration.</p></li></ul>
                   </div>
             </div>
           </div>
