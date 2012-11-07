@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Collection;
+import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -62,11 +63,31 @@ public class TscMojo
     private File sourceDirectory;
     
     /**
+     * Source directory for .d.ts source files
+     * @parameter expression="${ts.libraryDirectory}" default-value="src/main/d.ts"
+     */
+    private File libraryDirectory;
+
+    /**
      * Encoding for files
      * @parameter expression="${project.build.sourceEncoding}
      */
     private String encoding = "utf-8";
-    
+
+    /**
+     * Set to true to watch for changes to files and re-compile them on the fly.
+     *
+     * @parameter expression="${ts.watch}"
+     */
+    private boolean watch = false;
+
+    /**
+     * Set to true to ignore the lib.d.ts by default
+     *
+     * @parameter expression="${ts.nolib}"
+     */
+    private boolean noStandardLib = true;
+
     private Script nodeScript;
     private Script tscScript;
     private ScriptableObject globalScope;
@@ -74,44 +95,59 @@ public class TscMojo
     public void execute()
         throws MojoExecutionException
     {
-    	prepare(sourceDirectory);
-    	prepare(targetDirectory);
-    	
-    	try {
-			compileScripts();
-		} catch (IOException e) {
-			throw new MojoExecutionException(e.getMessage());
-		}
-    	
-    	int compiledFiles = 0;
-    	Collection<File> filenames = FileUtils.listFiles(sourceDirectory, new String[]{"ts"}, true);
-    	for (File file : filenames) {
-    		try {
-	    		String path = file.getPath().substring(sourceDirectory.getPath().length());
-	    		String sourcePath = path;
-	    		String targetPath = FilenameUtils.removeExtension(path)+".js";
-	    		File sourceFile = new File(sourceDirectory,sourcePath).getAbsoluteFile();
-	    		File targetFile = new File(targetDirectory,targetPath).getAbsoluteFile();	    		
-	    		if (targetFile.exists() && sourceFile.lastModified()>targetFile.lastModified()){		    		
-		    		getLog().info(String.format("Compiling: %s", sourcePath));	    		
-		    		tsc("--out",targetFile.getPath(),sourceFile.getPath());
-		    		getLog().info(String.format("Generated: %s", targetPath));	
-		    		compiledFiles++;
-	    		} 
-    		} catch (TscInvocationException e){
-    			getLog().error(e.getMessage());
-    			if (getLog().isDebugEnabled()){
-    				getLog().debug(e);
-    			}
-    		}   
-		}
-    	if (compiledFiles==0){
-        	getLog().info("Nothing to compile");    		
-    	} else {
-    		getLog().info(String.format("Compiled %s files",compiledFiles));
-    	}
+        prepare(sourceDirectory);
+        prepare(targetDirectory);
+
+        try {
+            compileScripts();
+        } catch (IOException e) {
+            throw createMojoExecutionException(e);
+        }
+
+        doCompileFiles(false);
+
+        if (watch) {
+
+        }
     }
-    
+
+    private void doCompileFiles(boolean checkTimestamp) throws MojoExecutionException {
+        try {
+            int compiledFiles = 0;
+            getLog().info("Searching directory " + sourceDirectory.getCanonicalPath());
+            Collection<File> filenames = FileUtils.listFiles(sourceDirectory, new String[] {"ts"}, true);
+            for (File file : filenames) {
+                try {
+                    String path = file.getPath().substring(sourceDirectory.getPath().length());
+                    String sourcePath = path;
+                    String targetPath = FilenameUtils.removeExtension(path) + ".js";
+                    File sourceFile = new File(sourceDirectory, sourcePath).getAbsoluteFile();
+                    File targetFile = new File(targetDirectory, targetPath).getAbsoluteFile();
+                    if (!targetFile.exists() || !checkTimestamp || sourceFile.lastModified() > targetFile.lastModified()) {
+                        String sourceFilePath = sourceFile.getPath();
+                        getLog().info(String.format("Compiling: %s", sourceFilePath));
+                        String generatePath = targetFile.getPath();
+                        tsc("--out", generatePath, sourceFilePath);
+                        getLog().info(String.format("Generated: %s", generatePath));
+                        compiledFiles++;
+                    }
+                } catch (TscInvocationException e) {
+                    getLog().error(e.getMessage());
+                    if (getLog().isDebugEnabled()) {
+                        getLog().debug(e);
+                    }
+                }
+            }
+            if (compiledFiles == 0) {
+                getLog().info("Nothing to compile");
+            } else {
+                getLog().info(String.format("Compiled %s file(s)", compiledFiles));
+            }
+        } catch (IOException e) {
+            throw createMojoExecutionException(e);
+        }
+    }
+
     private void compileScripts() throws IOException {
     	try {
         	Context.enter();
@@ -164,9 +200,24 @@ public class TscMojo
 			int i = 0;
 			argv.put(i++, argv, "node");
 			argv.put(i++, argv, "tsc.js");
+            if (noStandardLib) {
+                argv.put(i++, argv, "--nolib");
+            }
 			for (String s:args){
 				argv.put(i++, argv, s);
 			}
+            if (libraryDirectory.exists()) {
+                File[] libFiles = libraryDirectory.listFiles();
+                if (libFiles != null) {
+                    for (File libFile : libFiles) {
+                        if (libFile.getName().endsWith(".d.ts") && libFile.exists()) {
+                            String path = libFile.getAbsolutePath();
+                            getLog().info("Adding library file " + libFile);
+                            argv.put(i++, argv, path);
+                        }
+                    }
+                }
+            }
 			proc.defineProperty("encoding", encoding, ScriptableObject.READONLY);
 
 			NativeObject mainModule = (NativeObject)proc.get("mainModule");
@@ -194,9 +245,12 @@ public class TscMojo
     	} finally {
         	Context.exit();    		
     	}
-    	
     }
-    
+
+    private MojoExecutionException createMojoExecutionException(IOException e) {
+        return new MojoExecutionException(e.getMessage());
+    }
+
     /**
      * Create directory if did not exist
      * @param f
