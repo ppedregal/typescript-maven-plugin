@@ -88,10 +88,18 @@ public class TscMojo
      */
     private boolean noStandardLib = true;
 
+    /**
+     * The amount of millis to wait before polling the source files for changes
+     *
+     * @parameter expression="${ts.pollTime}"
+     */
+    private long pollTime = 100;
+
     private Script nodeScript;
     private Script tscScript;
     private ScriptableObject globalScope;
-    
+    private boolean watching;
+
     public void execute()
         throws MojoExecutionException
     {
@@ -107,16 +115,41 @@ public class TscMojo
         doCompileFiles(false);
 
         if (watch) {
+            watching = true;
+            getLog().info("Waiting for changes to " + sourceDirectory + " polling every " + pollTime + " millis");
+            checkForChangesEvery(pollTime);
+        }
+    }
 
+    private void checkForChangesEvery(long ms) throws MojoExecutionException {
+        FileSetChangeMonitor monitor = new FileSetChangeMonitor(sourceDirectory, "**/*.ts");
+        try {
+            while (true) {
+                Thread.sleep(ms);
+                List<String> modified = monitor.getModifiedFilesSinceLastTimeIAsked();
+                if (modified.size() > 0) {
+                    // TODO ideally we'd just pass in the files to compile here...
+                    doCompileFiles(true);
+                }
+            }
+        } catch (InterruptedException e) {
+            getLog().info("Caught interrupt, quitting.");
         }
     }
 
     private void doCompileFiles(boolean checkTimestamp) throws MojoExecutionException {
+        Collection<File> files = FileUtils.listFiles(sourceDirectory, new String[] {"ts"}, true);
+        doCompileFiles(checkTimestamp, files);
+    }
+
+    private void doCompileFiles(boolean checkTimestamp, Collection<File> files)
+            throws MojoExecutionException {
         try {
             int compiledFiles = 0;
-            getLog().info("Searching directory " + sourceDirectory.getCanonicalPath());
-            Collection<File> filenames = FileUtils.listFiles(sourceDirectory, new String[] {"ts"}, true);
-            for (File file : filenames) {
+            if (!watching) {
+                getLog().info("Searching directory " + sourceDirectory.getCanonicalPath());
+            }
+            for (File file : files) {
                 try {
                     String path = file.getPath().substring(sourceDirectory.getPath().length());
                     String sourcePath = path;
@@ -212,7 +245,9 @@ public class TscMojo
                     for (File libFile : libFiles) {
                         if (libFile.getName().endsWith(".d.ts") && libFile.exists()) {
                             String path = libFile.getAbsolutePath();
-                            getLog().info("Adding library file " + libFile);
+                            if (!watching) {
+                                getLog().info("Adding library file " + libFile);
+                            }
                             argv.put(i++, argv, path);
                         }
                     }
