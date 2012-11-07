@@ -16,11 +16,14 @@ package com.ppedregal.typescript.maven;
  * limitations under the License.
  */
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -69,6 +72,13 @@ public class TscMojo
     private File libraryDirectory;
 
     /**
+     * The lib.d.ts file used to pass into the compiler if required
+     *
+     * @parameter expression="${ts.libDTS}" default-value="src/main/tsc/lib.d.ts"
+     */
+    private File libDTS;
+
+    /**
      * Encoding for files
      * @parameter expression="${project.build.sourceEncoding}
      */
@@ -80,6 +90,13 @@ public class TscMojo
      * @parameter expression="${ts.watch}"
      */
     private boolean watch = false;
+
+    /**
+     * Set to true to use the command line 'tsc' executable if its on the PATH
+     *
+     * @parameter expression="${ts.useTsc}"
+     */
+    private boolean useTsc = false;
 
     /**
      * Set to true to ignore the lib.d.ts by default
@@ -103,8 +120,8 @@ public class TscMojo
     public void execute()
         throws MojoExecutionException
     {
-        prepare(sourceDirectory);
-        prepare(targetDirectory);
+        sourceDirectory.mkdirs();
+        targetDirectory.mkdirs();
 
         try {
             compileScripts();
@@ -219,7 +236,10 @@ public class TscMojo
     	}
     }
     
-    private void tsc(String...args) throws TscInvocationException {
+    private void tsc(String...args) throws TscInvocationException, MojoExecutionException {
+        if (useBinary(args)) {
+            return;
+        }
 
     	try {
     		Context.enter();
@@ -244,14 +264,20 @@ public class TscMojo
                 if (libFiles != null) {
                     for (File libFile : libFiles) {
                         if (libFile.getName().endsWith(".d.ts") && libFile.exists()) {
-                            String path = libFile.getAbsolutePath();
                             if (!watching) {
                                 getLog().info("Adding library file " + libFile);
                             }
-                            argv.put(i++, argv, path);
+                            argv.put(i++, argv, libFile.getAbsolutePath());
                         }
                     }
                 }
+            }
+            if (libDTS.exists()) {
+                if (!watching) {
+                    getLog().info("Adding standard library file " + libDTS);
+                }
+                argv.put(i++, argv, libDTS.getAbsolutePath());
+
             }
 			proc.defineProperty("encoding", encoding, ScriptableObject.READONLY);
 
@@ -276,28 +302,85 @@ public class TscMojo
         		throw new TscInvocationException("Javascript Error",e);    			
     		}
     	} catch (RhinoException e){
+            getLog().error(e.getMessage());
     		throw new TscInvocationException("Rhino Error",e);
     	} finally {
-        	Context.exit();    		
+        	org.mozilla.javascript.Context.exit();
     	}
+    }
+
+    private boolean useBinary(String[] args) throws MojoExecutionException {
+        if (useTsc) {
+
+            // lets try execute the 'tsc' executable directly
+            List<String> arguments = new ArrayList<String>();
+            arguments.add("tsc");
+            for (String arg : args) {
+                arguments.add(arg);
+            }
+            if (libraryDirectory.exists()) {
+                File[] libFiles = libraryDirectory.listFiles();
+                if (libFiles != null) {
+                    for (File libFile : libFiles) {
+                        if (libFile.getName().endsWith(".d.ts") && libFile.exists()) {
+                            String path = libFile.getAbsolutePath();
+                            if (!watching) {
+                                getLog().info("Adding library file " + libFile);
+                            }
+                            arguments.add(path);
+                        }
+                    }
+                }
+            }
+
+            getLog().debug("About to execute command: " + arguments);
+            ProcessBuilder builder = new ProcessBuilder(arguments);
+            //builder.redirectOutput();
+            try {
+                Process process = builder.start();
+
+                 //Read out dir output
+                redirectOutput(process.getInputStream());
+                redirectOutput(process.getErrorStream());
+
+                int value = process.waitFor();
+                if (value != 0) {
+                    getLog().error("Failed to execute tsc. Return code: " + value);
+                } else {
+                    getLog().debug("Compiled file successfully");
+                }
+            } catch (IOException e) {
+                getLog().error("Failed to execute tsc: " + e);
+                throw createMojoExecutionException(e);
+            } catch (InterruptedException e) {
+                throw new MojoExecutionException(e.getMessage());
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private void redirectOutput(InputStream is) throws IOException {
+        try {
+            InputStreamReader isr = new InputStreamReader(is);
+            BufferedReader br = new BufferedReader(isr);
+            while (true) {
+                String line = br.readLine();
+                if (line == null) {
+                    break;
+                }
+                getLog().info(line);
+            }
+        } finally {
+            is.close();
+        }
     }
 
     private MojoExecutionException createMojoExecutionException(IOException e) {
         return new MojoExecutionException(e.getMessage());
     }
 
-    /**
-     * Create directory if did not exist
-     * @param f
-     */
-    private void prepare(File f){
-        if ( !f.exists() )
-        {
-            f.mkdirs();
-        }
-    }
-
-	public File getTargetDirectory() {
+    public File getTargetDirectory() {
 		return targetDirectory;
 	}
 
