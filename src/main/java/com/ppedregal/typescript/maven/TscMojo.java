@@ -256,9 +256,13 @@ public class TscMojo
             if (noStandardLib) {
                 argv.put(i++, argv, "--nolib");
             }
-			for (String s:args){
-				argv.put(i++, argv, s);
-			}
+            if (libDTS.exists()) {
+                if (!watching) {
+                    getLog().info("Adding standard library file " + libDTS);
+                }
+                argv.put(i++, argv, libDTS.getAbsolutePath());
+
+            }
             if (libraryDirectory.exists()) {
                 File[] libFiles = libraryDirectory.listFiles();
                 if (libFiles != null) {
@@ -272,13 +276,9 @@ public class TscMojo
                     }
                 }
             }
-            if (libDTS.exists()) {
-                if (!watching) {
-                    getLog().info("Adding standard library file " + libDTS);
-                }
-                argv.put(i++, argv, libDTS.getAbsolutePath());
-
-            }
+			for (String s:args){
+				argv.put(i++, argv, s);
+			}
 			proc.defineProperty("encoding", encoding, ScriptableObject.READONLY);
 
 			NativeObject mainModule = (NativeObject)proc.get("mainModule");
@@ -315,9 +315,6 @@ public class TscMojo
             // lets try execute the 'tsc' executable directly
             List<String> arguments = new ArrayList<String>();
             arguments.add("tsc");
-            for (String arg : args) {
-                arguments.add(arg);
-            }
             if (libraryDirectory.exists()) {
                 File[] libFiles = libraryDirectory.listFiles();
                 if (libFiles != null) {
@@ -331,6 +328,9 @@ public class TscMojo
                         }
                     }
                 }
+            }
+            for (String arg : args) {
+                arguments.add(arg);
             }
 
             getLog().debug("About to execute command: " + arguments);
