@@ -335,13 +335,10 @@ public class TscMojo
 
             getLog().debug("About to execute command: " + arguments);
             ProcessBuilder builder = new ProcessBuilder(arguments);
-            //builder.redirectOutput();
             try {
                 Process process = builder.start();
-
-                 //Read out dir output
-                redirectOutput(process.getInputStream());
-                redirectOutput(process.getErrorStream());
+                redirectOutput(process.getInputStream(), false);
+                redirectOutput(process.getErrorStream(), true);
 
                 int value = process.waitFor();
                 if (value != 0) {
@@ -360,7 +357,7 @@ public class TscMojo
         return false;
     }
 
-    private void redirectOutput(InputStream is) throws IOException {
+    private void redirectOutput(InputStream is, boolean error) throws IOException {
         try {
             InputStreamReader isr = new InputStreamReader(is);
             BufferedReader br = new BufferedReader(isr);
@@ -369,7 +366,11 @@ public class TscMojo
                 if (line == null) {
                     break;
                 }
-                getLog().info(line);
+                if (error) {
+                    getLog().error(line);
+                } else {
+                    getLog().info(line);
+                }
             }
         } finally {
             is.close();
