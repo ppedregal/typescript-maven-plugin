@@ -16,7 +16,7 @@ To use the plugin in maven you need to follow these steps:
 
 <pre>
       &lt;plugin&gt;
-        &lt;groupId&gt;com.ppedregal.typescript.maven&lt;/groupId&gt;
+        &lt;groupId&gt;com.ppedregal.typescript&lt;/groupId&gt;
       	&lt;artifactId&gt;typescript-maven-plugin&lt;/artifactId&gt;        
         &lt;configuration&gt;
         	&lt;sourceDirectory&gt;src/main/ts&lt;/sourceDirectory&gt;
