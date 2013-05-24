@@ -256,14 +256,14 @@ public class TscMojo
             if (noStandardLib) {
                 argv.put(i++, argv, "--nolib");
             }
-            if (libDTS.exists()) {
+            if (libDTS!=null && libDTS.exists()) {
                 if (!watching) {
                     getLog().info("Adding standard library file " + libDTS);
                 }
                 argv.put(i++, argv, libDTS.getAbsolutePath());
 
             }
-            if (libraryDirectory.exists()) {
+            if (libraryDirectory!=null && libraryDirectory.exists()) {
                 File[] libFiles = libraryDirectory.listFiles();
                 if (libFiles != null) {
                     for (File libFile : libFiles) {
