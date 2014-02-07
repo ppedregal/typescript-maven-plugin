@@ -5,7 +5,7 @@ function argv(args){
 	return Array.prototype.slice.call(args).join(",");
 }
 function path(f){
-	return new String(f.getAbsolutePath()).replace(/[\/\\]/g,java.io.File.separator);
+	return new String(f.getCanonicalPath()).replace(/[\/\\]/g,java.io.File.separator);
 }
 exports.dirname=function(s){
 	var file = new java.io.File(s||".");
