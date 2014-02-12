@@ -62,6 +62,7 @@ exports.readFileSync=function(path,enc){
 	};
 };
 exports.writeFileSync=function(path,data,enc){
+        process.stdout.writeln(data)
 	log("writeFileSync",argv(arguments));
 	enc=enc||process.encoding||"utf-8";
 	var f = javafile(path),
@@ -99,7 +100,7 @@ exports.openSync=function(path,flags,mode){
 	return writer;
 };
 exports.writeSync=function(fd,buffer,offset,len,pos){
-	fd.write(new String(buffer));
+    fd.write(new String(buffer.data, buffer.encoding));
 };
 exports.closeSync=function(fd){
 	fd.close();

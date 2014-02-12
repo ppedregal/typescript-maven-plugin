@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -99,6 +98,14 @@ public class TscMojo
     private boolean useTsc = false;
 
     /**
+     * Set to true to only use the command line 'tsc' executable and not rely on the built-in tsc compiler code.
+     * If this is set to true, the build will fail if the 'tsc' executable is not on the patch
+     *
+     * @parameter expression="${ts.useTscOnly}"
+     */
+    private boolean useTscOnly = false;
+
+    /**
      * Set to true to ignore the lib.d.ts by default
      *
      * @parameter expression="${ts.nolib}"
@@ -111,6 +118,20 @@ public class TscMojo
      * @parameter expression="${ts.pollTime}"
      */
     private long pollTime = 100;
+
+    /**
+     * If set, the TypeScript files will be compiled into a single JavaScript file.
+     *
+     * @parameter expression="${ts.targetFile}
+     */
+    private File targetFile;
+
+    /**
+     * Set the target ECMAScript version for TypeScript compilation output.
+     *
+     * @parameter expression="${ts.targetVersion}" default-value="ES3"
+     */
+    private String targetVersion;
 
     private Script nodeScript;
     private Script tscScript;
@@ -156,10 +177,47 @@ public class TscMojo
 
     private void doCompileFiles(boolean checkTimestamp) throws MojoExecutionException {
         Collection<File> files = FileUtils.listFiles(sourceDirectory, new String[] {"ts"}, true);
-        doCompileFiles(checkTimestamp, files);
+        if (targetFile != null) {
+            doCompileAllFiles(checkTimestamp, files);
+        } else {
+            doCompileSingleFiles(checkTimestamp, files);
+        }
     }
 
-    private void doCompileFiles(boolean checkTimestamp, Collection<File> files)
+    private void doCompileAllFiles(boolean checkTimestamp, Collection<File> files) throws MojoExecutionException {
+        try {
+            if (!watching) {
+                getLog().info("Searching directory " + sourceDirectory.getCanonicalPath());
+            }
+            List<String> params = new ArrayList<String>();
+            params.add("--out");
+            params.add(targetFile.getPath());
+
+            // find the latest modification among the source files and add files to parameter list
+            Long lastModified = 0l;
+            for (File file : files) {
+                if (file.lastModified() > lastModified) {
+                    lastModified = file.lastModified();
+                }
+                params.add(file.getPath());
+            }
+
+            if (!targetFile.exists() || !checkTimestamp || lastModified > targetFile.lastModified()) {
+                try {
+                    tsc(params.toArray(new String[] {}));
+                } catch (TscInvocationException e) {
+                    getLog().error(e.getMessage());
+                    if (getLog().isDebugEnabled()) {
+                        getLog().debug(e);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw createMojoExecutionException(e);
+        }
+    }
+
+    private void doCompileSingleFiles(boolean checkTimestamp, Collection<File> files)
             throws MojoExecutionException {
         try {
             int compiledFiles = 0;
@@ -202,7 +260,7 @@ public class TscMojo
     	try {
         	Context.enter();
         	Context ctx = Context.getCurrentContext();
-        	ctx.setOptimizationLevel(9);
+        	ctx.setOptimizationLevel(-1);
         	globalScope = ctx.initStandardObjects();	    	
     		RequireBuilder require = new RequireBuilder();
     		require.setSandboxed(false);
@@ -276,16 +334,23 @@ public class TscMojo
                     }
                 }
             }
+
+            if (targetVersion != null) {
+                getLog().info("Setting target version to " + targetVersion);
+                argv.put(i++, argv, "--target");
+                argv.put(i++, argv, targetVersion);
+            }
+
 			for (String s:args){
 				argv.put(i++, argv, s);
 			}
+
 			proc.defineProperty("encoding", encoding, ScriptableObject.READONLY);
 
 			NativeObject mainModule = (NativeObject)proc.get("mainModule");
 			mainModule.defineProperty("filename", new File("tsc.js").getAbsolutePath(),ScriptableObject.READONLY);
-			
+
 			tscScript.exec(ctx,globalScope);
-			
     	} catch (JavaScriptException e){
     		if (e.getValue() instanceof NativeJavaObject){
     			NativeJavaObject njo = (NativeJavaObject)e.getValue();
@@ -329,6 +394,13 @@ public class TscMojo
                     }
                 }
             }
+
+            if (targetVersion != null) {
+                getLog().info("Setting target version to " + targetVersion);
+                arguments.add("--target");
+                arguments.add(targetVersion);
+            }
+
             for (String arg : args) {
                 arguments.add(arg);
             }
@@ -347,8 +419,14 @@ public class TscMojo
                     getLog().debug("Compiled file successfully");
                 }
             } catch (IOException e) {
-                getLog().error("Failed to execute tsc: " + e);
-                throw createMojoExecutionException(e);
+                if (useTscOnly) {
+                    getLog().error("Failed to execute tsc: " + e);
+                    throw createMojoExecutionException(e);
+                } else {
+                    getLog().debug("IOException while running 'tsc' binary", e);
+                    getLog().info("Unable to run 'tsc' binary - falling back to internal tsc compiler code");
+                    return false;
+                }
             } catch (InterruptedException e) {
                 throw new MojoExecutionException(e.getMessage());
             }
