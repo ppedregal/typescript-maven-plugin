@@ -43,56 +43,58 @@ import org.mozilla.javascript.commonjs.module.provider.SoftCachingModuleScriptPr
 
 /**
  * Goal which compiles a set of TypeScript files
- *
+ * 
  * @goal tsc
  * 
  * @phase compile
  */
-public class TscMojo
-    extends AbstractMojo
-{
+public class TscMojo extends AbstractMojo {
     /**
      * Output directory for .js compiled files
+     * 
      * @parameter expression="${ts.targetDirectory}" default-value="target/ts"
      * @required
      */
     private File targetDirectory;
-    
+
     /**
      * Source directory for .ts source files
+     * 
      * @parameter expression="${ts.sourceDirectory}" default-value="src/main/ts"
      */
     private File sourceDirectory;
-    
+
     /**
      * Source directory for .d.ts source files
+     * 
      * @parameter expression="${ts.libraryDirectory}" default-value="src/main/d.ts"
      */
     private File libraryDirectory;
 
     /**
      * The lib.d.ts file used to pass into the compiler if required
-     *
+     * 
      * @parameter expression="${ts.libDTS}" default-value="src/main/tsc/lib.d.ts"
      */
     private File libDTS;
 
     /**
      * Encoding for files
+     * 
      * @parameter expression="${project.build.sourceEncoding}
      */
     private String encoding = "utf-8";
 
     /**
      * Set to true to watch for changes to files and re-compile them on the fly.
-     *
+     * 
      * @parameter expression="${ts.watch}"
      */
     private boolean watch = false;
 
     /**
      * Set to true to use the command line 'tsc' executable if its on the PATH
-     *
+     * 
      * @parameter expression="${ts.useTsc}"
      */
     private boolean useTsc = false;
@@ -100,35 +102,35 @@ public class TscMojo
     /**
      * Set to true to only use the command line 'tsc' executable and not rely on the built-in tsc compiler code.
      * If this is set to true, the build will fail if the 'tsc' executable is not on the patch
-     *
+     * 
      * @parameter expression="${ts.useTscOnly}"
      */
     private boolean useTscOnly = false;
 
     /**
      * Set to true to ignore the lib.d.ts by default
-     *
+     * 
      * @parameter expression="${ts.nolib}"
      */
     private boolean noStandardLib = true;
 
     /**
      * The amount of millis to wait before polling the source files for changes
-     *
+     * 
      * @parameter expression="${ts.pollTime}"
      */
     private long pollTime = 100;
 
     /**
      * If set, the TypeScript files will be compiled into a single JavaScript file.
-     *
+     * 
      * @parameter expression="${ts.targetFile}
      */
     private File targetFile;
 
     /**
      * Set the target ECMAScript version for TypeScript compilation output.
-     *
+     * 
      * @parameter expression="${ts.targetVersion}" default-value="ES3"
      */
     private String targetVersion;
@@ -138,9 +140,7 @@ public class TscMojo
     private ScriptableObject globalScope;
     private boolean watching;
 
-    public void execute()
-        throws MojoExecutionException
-    {
+    public void execute() throws MojoExecutionException {
         sourceDirectory.mkdirs();
         targetDirectory.mkdirs();
 
@@ -176,7 +176,7 @@ public class TscMojo
     }
 
     private void doCompileFiles(boolean checkTimestamp) throws MojoExecutionException {
-        Collection<File> files = FileUtils.listFiles(sourceDirectory, new String[] {"ts"}, true);
+        Collection<File> files = FileUtils.listFiles(sourceDirectory, new String[] { "ts" }, true);
         if (targetFile != null) {
             doCompileAllFiles(checkTimestamp, files);
         } else {
@@ -257,71 +257,71 @@ public class TscMojo
     }
 
     private void compileScripts() throws IOException {
-    	try {
-        	Context.enter();
-        	Context ctx = Context.getCurrentContext();
-        	ctx.setOptimizationLevel(-1);
-        	globalScope = ctx.initStandardObjects();	    	
-    		RequireBuilder require = new RequireBuilder();
-    		require.setSandboxed(false);
-    		require.setModuleScriptProvider(new SoftCachingModuleScriptProvider(new ClasspathModuleSourceProvider()));
-    		require.createRequire(ctx, globalScope).install(globalScope);	
-    		nodeScript = compile(ctx,"node.js");
-    		tscScript = compile(ctx,"tsc.js");
-    	} finally {
-    		Context.exit();
-    		
-    	}
-    	Context.enter();
+        try {
+            Context.enter();
+            Context ctx = Context.getCurrentContext();
+            ctx.setOptimizationLevel(-1);
+            globalScope = ctx.initStandardObjects();
+            RequireBuilder require = new RequireBuilder();
+            require.setSandboxed(false);
+            require.setModuleScriptProvider(new SoftCachingModuleScriptProvider(new ClasspathModuleSourceProvider()));
+            require.createRequire(ctx, globalScope).install(globalScope);
+            nodeScript = compile(ctx, "node.js");
+            tscScript = compile(ctx, "tsc.js");
+        } finally {
+            Context.exit();
+
+        }
+        Context.enter();
     }
-    
-    private Script compile(Context context,String resource) throws IOException {
-    	InputStream stream =  TscMojo.class.getClassLoader().getResourceAsStream(resource);
-    	if (stream==null){
-    		throw new FileNotFoundException("Resource open error: "+resource);
-    	}
-    	try {
-    		return context.compileReader(new InputStreamReader(stream), resource, 1, null);
-    	} catch (IOException e){
-    		throw new IOException("Resource read error: "+resource);
-    	} finally {
-    		try {
-    			stream.close();
-    		} catch (IOException e){
-    			throw new IOException("Resource close error: "+resource);
-    		}
-    		stream = null;
-    	}
+
+    private Script compile(Context context, String resource) throws IOException {
+        InputStream stream = TscMojo.class.getClassLoader().getResourceAsStream(resource);
+        if (stream == null) {
+            throw new FileNotFoundException("Resource open error: " + resource);
+        }
+        try {
+            return context.compileReader(new InputStreamReader(stream), resource, 1, null);
+        } catch (IOException e) {
+            throw new IOException("Resource read error: " + resource);
+        } finally {
+            try {
+                stream.close();
+            } catch (IOException e) {
+                throw new IOException("Resource close error: " + resource);
+            }
+            stream = null;
+        }
     }
-    
-    private void tsc(String...args) throws TscInvocationException, MojoExecutionException {
+
+    private void tsc(String... args) throws TscInvocationException, MojoExecutionException {
         if (useBinary(args)) {
             return;
         }
 
-    	try {
-    		Context.enter();
-	    	Context ctx = Context.getCurrentContext();
+        try {
+            Context.enter();
+            Context ctx = Context.getCurrentContext();
 
-	    	nodeScript.exec(ctx, globalScope);
-	    	
-			NativeObject proc = (NativeObject)globalScope.get("process");
-			NativeArray argv = (NativeArray)proc.get("argv");
-			argv.defineProperty("length", 0, ScriptableObject.EMPTY);
-			int i = 0;
-			argv.put(i++, argv, "node");
-			argv.put(i++, argv, "tsc.js");
+            nodeScript.exec(ctx, globalScope);
+
+            NativeObject proc = (NativeObject) globalScope.get("process");
+            NativeArray argv = (NativeArray) proc.get("argv");
+            argv.defineProperty("length", 0, ScriptableObject.EMPTY);
+            int i = 0;
+            argv.put(i++, argv, "node");
+            argv.put(i++, argv, "tsc.js");
             if (noStandardLib) {
                 argv.put(i++, argv, "--nolib");
             }
-            if (libDTS!=null && libDTS.exists()) {
+            if (libDTS != null && libDTS.exists()) {
                 if (!watching) {
                     getLog().info("Adding standard library file " + libDTS);
                 }
                 argv.put(i++, argv, libDTS.getAbsolutePath());
 
             }
-            if (libraryDirectory!=null && libraryDirectory.exists()) {
+            if (libraryDirectory != null && libraryDirectory.exists()) {
                 File[] libFiles = libraryDirectory.listFiles();
                 if (libFiles != null) {
                     for (File libFile : libFiles) {
@@ -341,37 +341,37 @@ public class TscMojo
                 argv.put(i++, argv, targetVersion);
             }
 
-			for (String s:args){
-				argv.put(i++, argv, s);
-			}
+            for (String s : args) {
+                argv.put(i++, argv, s);
+            }
 
-			proc.defineProperty("encoding", encoding, ScriptableObject.READONLY);
+            proc.defineProperty("encoding", encoding, ScriptableObject.READONLY);
 
-			NativeObject mainModule = (NativeObject)proc.get("mainModule");
-			mainModule.defineProperty("filename", new File("tsc.js").getAbsolutePath(),ScriptableObject.READONLY);
+            NativeObject mainModule = (NativeObject) proc.get("mainModule");
+            mainModule.defineProperty("filename", new File("tsc.js").getAbsolutePath(), ScriptableObject.READONLY);
 
-			tscScript.exec(ctx,globalScope);
-    	} catch (JavaScriptException e){
-    		if (e.getValue() instanceof NativeJavaObject){
-    			NativeJavaObject njo = (NativeJavaObject)e.getValue();
-    			Object o = njo.unwrap();
-    			if (o instanceof ProcessExit){
-    				ProcessExit pe = (ProcessExit)o;
-    				if (pe.getStatus()!=0){
-    					throw new TscInvocationException("Process Error: "+pe.getStatus());
-    				} 
-    			} else {
-    				throw new TscInvocationException("Javascript Error",e);
-    			}
-    		} else {
-        		throw new TscInvocationException("Javascript Error",e);    			
-    		}
-    	} catch (RhinoException e){
+            tscScript.exec(ctx, globalScope);
+        } catch (JavaScriptException e) {
+            if (e.getValue() instanceof NativeJavaObject) {
+                NativeJavaObject njo = (NativeJavaObject) e.getValue();
+                Object o = njo.unwrap();
+                if (o instanceof ProcessExit) {
+                    ProcessExit pe = (ProcessExit) o;
+                    if (pe.getStatus() != 0) {
+                        throw new TscInvocationException("Process Error: " + pe.getStatus());
+                    }
+                } else {
+                    throw new TscInvocationException("Javascript Error", e);
+                }
+            } else {
+                throw new TscInvocationException("Javascript Error", e);
+            }
+        } catch (RhinoException e) {
             getLog().error(e.getMessage());
-    		throw new TscInvocationException("Rhino Error",e);
-    	} finally {
-        	org.mozilla.javascript.Context.exit();
-    	}
+            throw new TscInvocationException("Rhino Error", e);
+        } finally {
+            org.mozilla.javascript.Context.exit();
+        }
     }
 
     private boolean useBinary(String[] args) throws MojoExecutionException {
@@ -460,28 +460,27 @@ public class TscMojo
     }
 
     public File getTargetDirectory() {
-		return targetDirectory;
-	}
+        return targetDirectory;
+    }
 
-	public void setTargetDirectory(File targetDirectory) {
-		this.targetDirectory = targetDirectory;
-	}
+    public void setTargetDirectory(File targetDirectory) {
+        this.targetDirectory = targetDirectory;
+    }
 
-	public File getSourceDirectory() {
-		return sourceDirectory;
-	}
+    public File getSourceDirectory() {
+        return sourceDirectory;
+    }
 
-	public void setSourceDirectory(File sourceDirectory) {
-		this.sourceDirectory = sourceDirectory;
-	}
+    public void setSourceDirectory(File sourceDirectory) {
+        this.sourceDirectory = sourceDirectory;
+    }
 
-	public String getEncoding() {
-		return encoding;
-	}
+    public String getEncoding() {
+        return encoding;
+    }
 
-	public void setEncoding(String encoding) {
-		this.encoding = encoding;
-	}
-	
+    public void setEncoding(String encoding) {
+        this.encoding = encoding;
+    }
 
 }
