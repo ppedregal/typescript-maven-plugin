@@ -182,6 +182,7 @@ public class TscMojo extends AbstractMojo {
                 Thread.sleep(ms);
                 List<String> modified = monitor.getModifiedFilesSinceLastTimeIAsked();
                 if (modified.size() > 0) {
+                    // TODO ideally we'd just pass in the files to compile here...
                     doCompileFiles(true);
                 }
             }
@@ -360,11 +361,11 @@ public class TscMojo extends AbstractMojo {
                 argv.put(i++, argv, s);
             }
             if (generateSourcemap) {
-            	argv.put(i++, argv, "--sourcemap");
-            	if (sourcemapRootDirectory != null) {
-            		argv.put(i++, argv, "--sourceRoot");
-            		argv.put(i++, argv, sourcemapRootDirectory);
-            	}
+                argv.put(i++, argv, "--sourcemap");
+                if (sourcemapRootDirectory != null) {
+                    argv.put(i++, argv, "--sourceRoot");
+                    argv.put(i++, argv, sourcemapRootDirectory);
+                }
             }
 
             proc.defineProperty("encoding", encoding, ScriptableObject.READONLY);
@@ -427,11 +428,11 @@ public class TscMojo extends AbstractMojo {
                 arguments.add(arg);
             }
             if (generateSourcemap) {
-            	arguments.add("--sourcemap");
-            	if (sourcemapRootDirectory != null) {
-            		arguments.add("--sourceRoot");
-            		arguments.add(sourcemapRootDirectory);
-            	}
+                arguments.add("--sourcemap");
+                if (sourcemapRootDirectory != null) {
+                    arguments.add("--sourceRoot");
+                    arguments.add(sourcemapRootDirectory);
+                }
             }
 
             getLog().debug("About to execute command: " + arguments);
