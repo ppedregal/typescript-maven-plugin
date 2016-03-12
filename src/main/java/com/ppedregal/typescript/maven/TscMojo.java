@@ -113,6 +113,22 @@ public class TscMojo extends AbstractMojo {
      * @parameter expression="${ts.nolib}"
      */
     private boolean noStandardLib = true;
+    
+    /**
+     * Set to true to generate source maps.
+     * 
+     * @parameter expression="${ts.generateSourcemap}"
+     */
+    private boolean generateSourcemap = false;
+
+    /**
+     * Bound to "sourceRoot" parameter. Specifies the location where debugger should locate
+     * TypeScript files instead of source locations.
+     * 
+     * @parameter expression="${ts.sourcemapRootDirectory}" default-value=null
+     * @required
+     */
+    private String sourcemapRootDirectory;
 
     /**
      * The amount of millis to wait before polling the source files for changes
@@ -344,6 +360,13 @@ public class TscMojo extends AbstractMojo {
             for (String s : args) {
                 argv.put(i++, argv, s);
             }
+            if (generateSourcemap) {
+                argv.put(i++, argv, "--sourcemap");
+                if (sourcemapRootDirectory != null) {
+                    argv.put(i++, argv, "--sourceRoot");
+                    argv.put(i++, argv, sourcemapRootDirectory);
+                }
+            }
 
             proc.defineProperty("encoding", encoding, ScriptableObject.READONLY);
 
@@ -403,6 +426,13 @@ public class TscMojo extends AbstractMojo {
 
             for (String arg : args) {
                 arguments.add(arg);
+            }
+            if (generateSourcemap) {
+                arguments.add("--sourcemap");
+                if (sourcemapRootDirectory != null) {
+                    arguments.add("--sourceRoot");
+                    arguments.add(sourcemapRootDirectory);
+                }
             }
 
             getLog().debug("About to execute command: " + arguments);
